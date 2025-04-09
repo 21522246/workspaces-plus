@@ -107,6 +107,9 @@ const Logic = {
     // This focus is needed to capture key presses without user interaction
     document.querySelector("#keyupTrap").focus();
     document.addEventListener("keyup", async e => {
+      if (e.target.classList.contains("js-edit-workspace-input")) {
+        return;
+      }
       const key = e.key;
       var index = parseInt(key);
 
