@@ -2,7 +2,7 @@ class Workspace {
   constructor(id, state) {
     this.id = id;
 
-    if (state){
+    if (state) {
       this.name = state.name;
       this.active = state.active;
       this.hiddenTabs = state.hiddenTabs;
@@ -15,7 +15,7 @@ class Workspace {
       name: name,
       active: active || false,
       hiddenTabs: tabs,
-      windowId: windowId
+      windowId: windowId,
     });
 
     await workspace.storeState();
@@ -37,11 +37,11 @@ class Workspace {
   }
 
   async getTabs() {
-    if (this.active){
+    if (this.active) {
       // Not counting pinned tabs. Should we?
       const tabs = await browser.tabs.query({
         pinned: false,
-        windowId: this.windowId
+        windowId: this.windowId,
       });
 
       return tabs;
@@ -61,12 +61,12 @@ class Workspace {
   async prepareToHide() {
     const tabs = await browser.tabs.query({
       windowId: this.windowId,
-      pinned: false
+      pinned: false,
     });
 
-    tabs.forEach(tab => {
+    tabs.forEach((tab) => {
       this.hiddenTabs.push(tab);
-    })
+    });
   }
 
   // Then remove the tabs from the window
@@ -74,27 +74,38 @@ class Workspace {
     this.active = false;
     await this.storeState();
 
-    const tabIds = this.hiddenTabs.map(tab => tab.id);
+    const tabIds = this.hiddenTabs.map((tab) => tab.id);
     await browser.tabs.remove(tabIds);
   }
 
   async show() {
-    const tabs = this.hiddenTabs.filter(tab => Util.isPermissibleURL(tab.url));
+    const tabs = this.hiddenTabs.filter((tab) =>
+      Util.isPermissibleURL(tab.url),
+    );
 
-    if (tabs.length == 0){
+    if (tabs.length == 0) {
       tabs.push({
         url: null,
-        active: true
+        active: true,
       });
     }
 
-    const promises = tabs.map(tab => {
-      return browser.tabs.create({
-        url: tab.url,
-        active: tab.active,
-        cookieStoreId: tab.cookieStoreId,
-        windowId: this.windowId
-      });
+    const promises = tabs.map((tab) => {
+      return browser.tabs
+        .create({
+          url: tab.url,
+          active: tab.active,
+          cookieStoreId: tab.cookieStoreId,
+          // windowId: this.windowId,
+        })
+        .catch(() => {
+          browser.notifications && browser.notifications.create({
+            "type": "basic",
+            "iconUrl": browser.runtime.getURL("icons/container-site-d-48.png"),
+            "title": "Workspaces+",
+            "message": `Failed to create tab: ${tab.url || "Unknown URL"}`
+          });
+        });
     });
 
     await Promise.all(promises);
@@ -120,13 +131,15 @@ class Workspace {
     // We need to refresh the state because if the active workspace was switched we might have an old reference
     await this.refreshState();
 
-    if (this.active){
+    if (this.active) {
       // If the workspace is currently active, simply remove the tab.
       await browser.tabs.remove(tab.id);
     } else {
       // Otherwise, forget it from hiddenTabs
-      const index = this.hiddenTabs.findIndex(hiddenTab => hiddenTab.id == tab.id);
-      if (index > -1){
+      const index = this.hiddenTabs.findIndex(
+        (hiddenTab) => hiddenTab.id == tab.id,
+      );
+      if (index > -1) {
         this.hiddenTabs.splice(index, 1);
         await this.storeState();
       }
@@ -142,8 +155,8 @@ class Workspace {
     this.windowId = state.windowId;
 
     // For backwards compatibility
-    if (!this.windowId){
-      console.log("Backwards compatibility for",this.name);
+    if (!this.windowId) {
+      console.log("Backwards compatibility for", this.name);
       this.windowId = (await browser.windows.getCurrent()).id;
       await this.storeState();
     }
@@ -154,7 +167,7 @@ class Workspace {
       name: this.name,
       active: this.active,
       hiddenTabs: this.hiddenTabs,
-      windowId: this.windowId
+      windowId: this.windowId,
     });
   }
 }

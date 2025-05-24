@@ -1,7 +1,6 @@
 const WorkspaceStorage = {
-
   async fetchWorkspaceState(workspaceId) {
-    const key = `workspaces@${workspaceId}`;
+    const key = WorkspaceStorage._getKeyForWorkspace(workspaceId);
     const results = await browser.storage.local.get(key);
 
     if (results[key]) {
@@ -12,19 +11,19 @@ const WorkspaceStorage = {
   },
 
   async storeWorkspaceState(workspaceId, state) {
-    const key = `workspaces@${workspaceId}`;
+    const key = WorkspaceStorage._getKeyForWorkspace(workspaceId);
     await browser.storage.local.set({
-      [key]: state
+      [key]: state,
     });
   },
 
   async deleteWorkspaceState(workspaceId) {
-    const key = `workspaces@${workspaceId}`;
+    const key = WorkspaceStorage._getKeyForWorkspace(workspaceId);
     await browser.storage.local.remove(key);
   },
 
   async fetchWorkspacesCountForWindow(windowId) {
-    const key = `windows@${windowId}`;
+    const key = WorkspaceStorage._getKeyForWindow(windowId);
     const results = await browser.storage.local.get(key);
 
     const workspaceIds = results[key] || [];
@@ -32,18 +31,18 @@ const WorkspaceStorage = {
     return workspaceIds.length;
   },
   async changeWorkspaceOrder(windowId, orderedWorkspaceIds) {
-    const key = `windows@${windowId}`;
+    const key = WorkspaceStorage._getKeyForWindow(windowId);
     await browser.storage.local.set({
-      [key]: orderedWorkspaceIds
+      [key]: orderedWorkspaceIds,
     });
   },
 
   async fetchWorkspacesForWindow(windowId) {
-    const key = `windows@${windowId}`;
+    const key = WorkspaceStorage._getKeyForWindow(windowId);
     const results = await browser.storage.local.get(key);
 
     const workspaceIds = results[key] || [];
-    const promises = workspaceIds.map(async workspaceId => {
+    const promises = workspaceIds.map(async (workspaceId) => {
       const state = await WorkspaceStorage.fetchWorkspaceState(workspaceId);
       return new Workspace(workspaceId, state);
     });
@@ -52,35 +51,39 @@ const WorkspaceStorage = {
   },
 
   async registerWorkspaceToWindow(windowId, workspaceId) {
-    const key = `windows@${windowId}`;
+    const key = WorkspaceStorage._getKeyForWindow(windowId);
     const results = await browser.storage.local.get(key);
     const workspacesForWindow = results[key] || [];
 
     workspacesForWindow.push(workspaceId);
     await browser.storage.local.set({
-      [key]: workspacesForWindow
+      [key]: workspacesForWindow,
     });
   },
 
   async unregisterWorkspaceToWindow(windowId, workspaceId) {
-    const key = `windows@${windowId}`;
+    const key = WorkspaceStorage._getKeyForWindow(windowId);
     const results = await browser.storage.local.get(key);
     const workspacesForWindow = results[key] || [];
 
-    const index = workspacesForWindow.findIndex(aWorkspaceId => aWorkspaceId == workspaceId);
+    const index = workspacesForWindow.findIndex(
+      (aWorkspaceId) => aWorkspaceId == workspaceId,
+    );
     workspacesForWindow.splice(index, 1);
 
     await browser.storage.local.set({
-      [key]: workspacesForWindow
+      [key]: workspacesForWindow,
     });
   },
 
   async fetchNextWorkspaceId(windowId, referenceWorkspaceId) {
-    const key = `windows@${windowId}`;
+    const key = WorkspaceStorage._getKeyForWindow(windowId);
     const results = await browser.storage.local.get(key);
 
     const workspaceIds = results[key] || [];
-    const index = workspaceIds.findIndex(aWorkspaceId => aWorkspaceId == referenceWorkspaceId);
+    const index = workspaceIds.findIndex(
+      (aWorkspaceId) => aWorkspaceId == referenceWorkspaceId,
+    );
 
     if (index == -1 || workspaceIds.length == 1) {
       throw "There is no other workspace";
@@ -92,7 +95,7 @@ const WorkspaceStorage = {
 
   async tearDownWindow(windowId) {
     // Fetch workspaces in closed window
-    const key = `windows@${windowId}`;
+    const key = WorkspaceStorage._getKeyForWindow(windowId);
     const results = await browser.storage.local.get(key);
     const workspaceIds = results[key] || [];
 
@@ -103,6 +106,12 @@ const WorkspaceStorage = {
     const promises = workspaceIds.map(WorkspaceStorage.deleteWorkspaceState);
 
     await Promise.all(promises);
-  }
+  },
 
-}
+  _getKeyForWorkspace(workspaceId) {
+    return `workspaces@${workspaceId}`;
+  },
+  _getKeyForWindow(windowId) {
+    return `windows@0`;
+  },
+};

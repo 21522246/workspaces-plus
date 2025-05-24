@@ -1,14 +1,13 @@
 const BackgroundLogic = {
-
   init() {
     BackgroundLogic.initializeListeners();
     BackgroundLogic.initializeContextMenu();
   },
 
   initializeListeners() {
-    browser.windows.onRemoved.addListener(BackgroundLogic.tearDownWindow);
+    // browser.windows.onRemoved.addListener(BackgroundLogic.tearDownWindow);
 
-    browser.windows.onFocusChanged.addListener(windowId => {
+    browser.windows.onFocusChanged.addListener((windowId) => {
       if (windowId != browser.windows.WINDOW_ID_NONE) {
         BackgroundLogic.updateContextMenu();
         BackgroundLogic.updateBadgeText();
@@ -18,25 +17,24 @@ const BackgroundLogic = {
     browser.tabs.onCreated.addListener(BackgroundLogic.updateContextMenu);
     browser.tabs.onRemoved.addListener(BackgroundLogic.updateContextMenu);
 
-    browser.omnibox.onInputChanged.addListener(BackgroundLogic.handleAwesomebarSearch);
-    browser.omnibox.onInputEntered.addListener(BackgroundLogic.handleAwesomebarSelection);
+    browser.omnibox.onInputChanged.addListener(
+      BackgroundLogic.handleAwesomebarSearch,
+    );
+    browser.omnibox.onInputEntered.addListener(
+      BackgroundLogic.handleAwesomebarSelection,
+    );
   },
 
   async getWorkspacesForCurrentWindow() {
-    return await BackgroundLogic.getWorkspacesForWindow(await BackgroundLogic.getCurrentWindowId());
+    return await BackgroundLogic.getWorkspacesForWindow(
+      await BackgroundLogic.getCurrentWindowId(),
+    );
   },
 
   async getWorkspacesForWindow(windowId) {
     const workspaces = await WorkspaceStorage.fetchWorkspacesForWindow(windowId);
-
-    if (workspaces.length > 0) {
-      return workspaces;
-    } else {
-      const defaultWorkspace = await BackgroundLogic.createNewWorkspace(true);
-
-      return [defaultWorkspace];
-    }
-
+    if (workspaces.length > 0) return workspaces;
+    return [await BackgroundLogic.createNewWorkspace(true)];
   },
 
   async changeWorkspaceOrder(orderedWorkspaceIds) {
@@ -44,17 +42,28 @@ const BackgroundLogic = {
     await WorkspaceStorage.changeWorkspaceOrder(windowId, orderedWorkspaceIds);
   },
 
+  /**
+   * Returns the currently active workspace for the given window.
+   * If no workspace is active, it returns the first one.
+   * @param {number} windowId - The ID of the window for which to get the active workspace.
+   * @returns {Promise<Workspace>} A promise that resolves to the active workspace for the given window.
+   */
   async getCurrentWorkspaceForWindow(windowId) {
     const workspaces = await BackgroundLogic.getWorkspacesForWindow(windowId);
 
-    return workspaces.find(workspace => workspace.active);
+    return workspaces.find((workspace) => workspace.active);
   },
 
   async createNewWorkspace(active) {
     const windowId = await BackgroundLogic.getCurrentWindowId();
-    const nextNumber = (await WorkspaceStorage.fetchWorkspacesCountForWindow(windowId)) + 1;
+    const nextNumber =
+      (await WorkspaceStorage.fetchWorkspacesCountForWindow(windowId)) + 1;
 
-    const workspace = await Workspace.create(windowId, `Workspace ${nextNumber}`, active || false);
+    const workspace = await Workspace.create(
+      windowId,
+      `Workspace ${nextNumber}`,
+      active || false,
+    );
 
     // Re-render context menu
     BackgroundLogic.updateContextMenu();
@@ -65,10 +74,17 @@ const BackgroundLogic = {
 
   async cloneWorkspace(active) {
     const windowId = await BackgroundLogic.getCurrentWindowId();
-    const currentWorkspace = await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
-    const nextNumber = (await WorkspaceStorage.fetchWorkspacesCountForWindow(windowId)) + 1;
+    const currentWorkspace =
+      await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
+    const nextNumber =
+      (await WorkspaceStorage.fetchWorkspacesCountForWindow(windowId)) + 1;
 
-    const workspace = await Workspace.create(windowId, `Workspace ${nextNumber}`, active || false, await currentWorkspace.getTabs());
+    const workspace = await Workspace.create(
+      windowId,
+      `Workspace ${nextNumber}`,
+      active || false,
+      await currentWorkspace.getTabs(),
+    );
 
     // Re-render context menu
     BackgroundLogic.updateContextMenu();
@@ -90,7 +106,8 @@ const BackgroundLogic = {
   async switchToWorkspace(workspaceId) {
     const windowId = await BackgroundLogic.getCurrentWindowId();
 
-    const oldWorkspace = await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
+    const oldWorkspace =
+      await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
     const newWorkspace = await Workspace.find(workspaceId);
 
     if (oldWorkspace.id == newWorkspace.id) {
@@ -120,11 +137,15 @@ const BackgroundLogic = {
 
   async deleteWorkspace(workspaceId) {
     const windowId = await BackgroundLogic.getCurrentWindowId();
-    const currentWorkspace = await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
+    const currentWorkspace =
+      await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
     const workspaceToDelete = await Workspace.find(workspaceId);
 
     if (currentWorkspace.id == workspaceId) {
-      const nextWorkspaceId = await WorkspaceStorage.fetchNextWorkspaceId(windowId, workspaceId);
+      const nextWorkspaceId = await WorkspaceStorage.fetchNextWorkspaceId(
+        windowId,
+        workspaceId,
+      );
       await BackgroundLogic.switchToWorkspace(nextWorkspaceId);
     }
 
@@ -137,7 +158,8 @@ const BackgroundLogic = {
 
   async moveTabToWorkspace(tab, destinationWorkspace) {
     const windowId = await BackgroundLogic.getCurrentWindowId();
-    const currentWorkspace = await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
+    const currentWorkspace =
+      await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
 
     // Attach tab to destination workspace
     await destinationWorkspace.attachTab(tab);
@@ -145,7 +167,7 @@ const BackgroundLogic = {
     // If this is the last tab of the window, we need to switch workspaces
     const tabsInCurrentWindow = await browser.tabs.query({
       windowId: windowId,
-      pinned: false
+      pinned: false,
     });
 
     if (tabsInCurrentWindow.length == 1) {
@@ -175,31 +197,33 @@ const BackgroundLogic = {
     browser.menus.create({
       id: menuId,
       title: "Send Tab to Workspace",
-      contexts: ["tab"]
+      contexts: ["tab"],
     });
 
     const workspaces = await BackgroundLogic.getWorkspacesForCurrentWindow();
-    const workspaceObjects = await Promise.all(workspaces.map(workspace => workspace.toObject()));
-    workspaceObjects.forEach(workspace => {
+    const workspaceObjects = await Promise.all(
+      workspaces.map((workspace) => workspace.toObject()),
+    );
+    workspaceObjects.forEach((workspace) => {
       browser.menus.create({
         title: `${workspace.name} (${workspace.tabCount} tabs)`,
         parentId: menuId,
         id: workspace.id,
         enabled: !workspace.active,
-        onclick: BackgroundLogic.handleContextMenuClick
+        onclick: BackgroundLogic.handleContextMenuClick,
       });
     });
 
     browser.menus.create({
       parentId: menuId,
-      type: "separator"
+      type: "separator",
     });
 
     browser.menus.create({
       title: "Create new workspace",
       parentId: menuId,
       id: "new-" + menuId,
-      onclick: BackgroundLogic.handleContextMenuClick
+      onclick: BackgroundLogic.handleContextMenuClick,
     });
   },
 
@@ -226,20 +250,20 @@ const BackgroundLogic = {
 
   async handleAwesomebarSelection(content, disposition) {
     let windowId, workspaceId, tabIndex;
-    [windowId, workspaceId, tabIndex] = content.split(':');
+    [windowId, workspaceId, tabIndex] = content.split(":");
 
-    await browser.windows.update(parseInt(windowId), {focused: true});
+    await browser.windows.update(parseInt(windowId), { focused: true });
 
     const workspace = await Workspace.find(workspaceId);
     await BackgroundLogic.switchToWorkspace(workspace.id);
 
     const matchedTabs = await browser.tabs.query({
       windowId: parseInt(windowId),
-      index: parseInt(tabIndex)
+      index: parseInt(tabIndex),
     });
 
     if (matchedTabs.length > 0) {
-      await browser.tabs.update(matchedTabs[0].id, {active: true});
+      await browser.tabs.update(matchedTabs[0].id, { active: true });
     }
   },
 
@@ -248,8 +272,10 @@ const BackgroundLogic = {
       return [];
     }
 
-    const windows = await browser.windows.getAll({windowTypes: ['normal']})
-    const promises = windows.map(windowInfo => BackgroundLogic.searchTabsInWindow(text, windowInfo.id));
+    const windows = await browser.windows.getAll({ windowTypes: ["normal"] });
+    const promises = windows.map((windowInfo) =>
+      BackgroundLogic.searchTabsInWindow(text, windowInfo.id),
+    );
 
     return Util.flattenArray(await Promise.all(promises));
   },
@@ -258,13 +284,13 @@ const BackgroundLogic = {
     const suggestions = [];
 
     const workspaces = await BackgroundLogic.getWorkspacesForWindow(windowId);
-    const promises = workspaces.map(async workspace => {
+    const promises = workspaces.map(async (workspace) => {
       const tabs = await workspace.getTabs();
-      tabs.forEach(tab => {
+      tabs.forEach((tab) => {
         if (Util.matchesQuery(tab.title, text)) {
           suggestions.push({
             content: `${windowId}:${workspace.id}:${tab.index}`,
-            description: tab.title
+            description: tab.title,
           });
         }
       });
@@ -276,13 +302,12 @@ const BackgroundLogic = {
 
   async updateBadgeText() {
     const windowId = await BackgroundLogic.getCurrentWindowId();
-    const currentWorkspace = await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
-    browser.browserAction.setBadgeText(
-      {text: currentWorkspace.name.toUpperCase().substring(0, 4)}
-    );
-    browser.browserAction.setBadgeBackgroundColor(
-      {color: "#121212"}
-    );
+    const currentWorkspace =
+      await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
+    browser.browserAction.setBadgeText({
+      text: currentWorkspace.name.toUpperCase().substring(0, 4),
+    });
+    browser.browserAction.setBadgeBackgroundColor({ color: "#121212" });
   },
 };
 

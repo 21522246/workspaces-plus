@@ -1,13 +1,18 @@
 const Util = {
 
-  // Is the url compatible with the tabs.create API?
+  /**
+   * Is the url compatible with the tabs.create API?
+   * @param {string} url - The URL to check.
+   * @returns {boolean} True if the URL is permissible, false otherwise.
+   */
   isPermissibleURL(url) {
-    const protocol = new URL(url).protocol;
-    if (protocol === "about:" || protocol === "chrome:" || protocol === "moz-extension:") {
-      return false;
-    }
-
-    return true;
+    const notPermissibleProtocols = new Set([
+      "about:",
+      "chrome:",
+      "moz-extension:",
+      "file:"
+    ]);
+    return !notPermissibleProtocols.has(new URL(url).protocol);
   },
 
   // UUIDv4 from https://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
