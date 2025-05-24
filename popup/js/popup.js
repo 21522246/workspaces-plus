@@ -105,8 +105,8 @@ const Logic = {
     });
 
     // This focus is needed to capture key presses without user interaction
-    document.querySelector("#keyupTrap").focus();
-    document.addEventListener("keyup", async e => {
+    document.querySelector("#keyTrap").focus();
+    document.addEventListener("keydown", async e => {
       if (e.target.classList.contains("js-edit-workspace-input")) {
         return;
       }
@@ -128,6 +128,33 @@ const Logic = {
         }
       }
 
+      if (key == "ArrowUp" || key == "k") {
+        const items = Array.from(document.querySelectorAll("#workspace-list .workspace-list-entry"));
+        const current = items.findIndex(item => item.classList.contains("selected"));
+        const previous = current > 0 ? current - 1 : items.length - 1;
+        items[previous].classList.add("selected");
+        items[current].classList.remove("selected");
+      }
+
+      if (key == "ArrowDown" || key == "j") {
+        const items = Array.from(document.querySelectorAll("#workspace-list .workspace-list-entry"));
+        const current = items.findIndex(item => item.classList.contains("selected"));
+        const next = current < items.length - 1 ? current + 1 : 0;
+        items[next].classList.add("selected");
+        items[current].classList.remove("selected");
+      }
+
+      if (key == "Enter" || key == " ") {
+        const selected = document.querySelector("#workspace-list .workspace-list-entry.selected");
+        if (selected) {
+          Logic.callBackground("switchToWorkspace", {
+            workspaceId: selected.dataset.workspaceId
+          });
+
+          window.close();
+        }
+      }
+
     });
   },
 
@@ -138,15 +165,22 @@ const Logic = {
   async renderWorkspacesList() {
     const fragment = document.createDocumentFragment();
 
-    this.workspaces.forEach(workspace => {
+    this.workspaces.forEach((workspace, idx) => {
       const li = document.createElement("li");
       li.classList.add("workspace-list-entry", "js-switch-workspace");
       if (workspace.active) {
         li.classList.add("active");
+        li.classList.add("selected");
       }
       li.textContent = workspace.name;
       li.dataset.workspaceId = workspace.id;
       li.draggable = true;
+
+      // Add order number
+      const orderSpan = document.createElement("span");
+      orderSpan.className = "workspace-order";
+      orderSpan.textContent = (idx + 1) + ".";
+      li.insertBefore(orderSpan, li.firstChild);
 
       const span = document.createElement("span");
       span.classList.add("tabs-qty");
