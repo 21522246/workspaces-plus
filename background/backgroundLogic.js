@@ -7,12 +7,12 @@ const BackgroundLogic = {
   initializeListeners() {
     // browser.windows.onRemoved.addListener(BackgroundLogic.tearDownWindow);
 
-    browser.windows.onFocusChanged.addListener((windowId) => {
-      if (windowId != browser.windows.WINDOW_ID_NONE) {
-        BackgroundLogic.updateContextMenu();
-        BackgroundLogic.updateBadgeText();
-      }
-    });
+    // browser.windows.onFocusChanged.addListener((windowId) => {
+    //   if (windowId != browser.windows.WINDOW_ID_NONE) {
+    //     BackgroundLogic.updateContextMenu();
+    //     BackgroundLogic.updateBadgeText();
+    //   }
+    // });
 
     browser.tabs.onCreated.addListener(BackgroundLogic.updateContextMenu);
     browser.tabs.onRemoved.addListener(BackgroundLogic.updateContextMenu);
