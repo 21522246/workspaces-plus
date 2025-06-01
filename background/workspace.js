@@ -65,7 +65,13 @@ class Workspace {
     });
 
     tabs.forEach((tab) => {
-      this.hiddenTabs.push(tab);
+      const tabData = {
+        id: tab.id,
+        url: tab.url,
+        active: tab.active,
+        cookieStoreId: tab.cookieStoreId,
+      };
+      this.hiddenTabs.push(tabData);
     });
   }
 
@@ -96,15 +102,15 @@ class Workspace {
           url: tab.url,
           active: tab.active,
           cookieStoreId: tab.cookieStoreId,
-          // windowId: this.windowId,
         })
         .catch(() => {
-          browser.notifications && browser.notifications.create({
-            "type": "basic",
-            "iconUrl": browser.runtime.getURL("icons/container-site-d-48.png"),
-            "title": "Workspaces+",
-            "message": `Failed to create tab: ${tab.url || "Unknown URL"}`
-          });
+          browser.notifications &&
+            browser.notifications.create({
+              type: "basic",
+              iconUrl: browser.runtime.getURL("icons/container-site-d-48.png"),
+              title: "Workspaces+",
+              message: `Failed to create tab: ${tab.url || "Unknown URL"}`,
+            });
         });
     });
 
