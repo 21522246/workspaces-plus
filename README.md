@@ -12,7 +12,7 @@
 </div>
 
 <a href="#Features"><h2>Installation 🔗</h2></a>
-<b><a href="https://addons.mozilla.org/en-US/firefox/addon/workspacesplus/">click here</a> to download and install Workspaces+.</b>
+<b><a href="https://addons.mozilla.org/en-US/firefox/addon/workspaces-plus-plus/">click here</a> to download and install Workspaces++.</b>
 
 <a href="#Features"><h2>Features (from Tab Workspaces) 🔗</h2></a>
  - Each tab belongs to a workspace. New tabs are automatically added to the current workspace.
