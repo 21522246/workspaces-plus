@@ -232,8 +232,9 @@ const BackgroundLogic = {
     await BackgroundLogic.initializeContextMenu();
   }, 250),
 
-  async handleContextMenuClick(menu, tab) {
-    var destinationWorkspace;
+  async handleContextMenuClick(menu, _tab) {
+    let destinationWorkspace;
+    const selected_tabs = await browser.tabs.query({ currentWindow: true, highlighted: true });
 
     if (menu.menuItemId.substring(0, 3) == "new") {
       destinationWorkspace = await BackgroundLogic.createNewWorkspace(false);
@@ -241,14 +242,16 @@ const BackgroundLogic = {
       destinationWorkspace = await Workspace.find(menu.menuItemId);
     }
 
-    await BackgroundLogic.moveTabToWorkspace(tab, destinationWorkspace);
+    for (const t of selected_tabs) {
+      await BackgroundLogic.moveTabToWorkspace(t, destinationWorkspace);
+    }
   },
 
   async handleAwesomebarSearch(text, suggest) {
     suggest(await BackgroundLogic.searchTabs(text));
   },
 
-  async handleAwesomebarSelection(content, disposition) {
+  async handleAwesomebarSelection(content, _disposition) {
     let windowId, workspaceId, tabIndex;
     [windowId, workspaceId, tabIndex] = content.split(":");
 
