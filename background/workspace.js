@@ -68,6 +68,7 @@ class Workspace {
       const tabData = {
         id: tab.id,
         url: tab.url,
+        title: tab.title,
         active: tab.active,
         cookieStoreId: tab.cookieStoreId,
       };
@@ -100,8 +101,10 @@ class Workspace {
       return browser.tabs
         .create({
           url: tab.url,
+          title: tab.active != true ? tab.title : null,
           active: tab.active,
           cookieStoreId: tab.cookieStoreId,
+          discarded: tab.active != true,
         })
         .catch(() => {
           browser.notifications &&
