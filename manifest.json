@@ -32,6 +32,7 @@
   "background": {
     "scripts": [
       "background/util.js",
+      "background/lz-string.js",
       "background/backgroundLogic.js",
       "background/workspace.js",
       "background/workspaceStorage.js",
