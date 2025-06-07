@@ -88,7 +88,7 @@ const WorkspaceStorage = {
 
   async _localStorageGet(key) {
     const results = await browser.storage.local.get(key);
-    const decompressed = LZString.decompress(results[key]);
+    const decompressed = LZString.decompress(results[key]) || results[key];
     return JSON.parse(decompressed != "" ? decompressed : null);
   },
   async _localStorageSet(key, value) {
