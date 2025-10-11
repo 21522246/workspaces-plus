@@ -13,7 +13,8 @@
     "notifications",
     "menus",
     "storage",
-    "tabs"
+    "tabs",
+    "tabGroups"
   ],
   "browser_action": {
     "browser_style": true,

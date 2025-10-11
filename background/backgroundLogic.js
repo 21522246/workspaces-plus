@@ -84,6 +84,7 @@ const BackgroundLogic = {
       `Workspace ${nextNumber}`,
       active || false,
       await currentWorkspace.getTabs(),
+      await currentWorkspace.getGroups(),
     );
 
     // Re-render context menu

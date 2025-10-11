@@ -29,6 +29,7 @@
  - Current workspace indicator.
  - Dark theme.
  - Consistent and non-closing UI.
+ - Tab Groups support - Save and restore which tabs are grouped together when switching workspaces.
 
 <a href="#TODO"><h2>TODO 🔗</h2></a>
 - [x] Workspace indicator based on workspace name.
