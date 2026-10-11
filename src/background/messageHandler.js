@@ -19,6 +19,10 @@ browser.runtime.onMessage.addListener(async m => {
       response = await BackgroundLogic.getWorkspaceTabs(m.workspaceId);
       break;
 
+    case "getTabsOfAllWorkspaces":
+      response = await BackgroundLogic.getTabsOfAllWorkspaces();
+      break;
+
     case "removeWorkspaceTab":
       await BackgroundLogic.removeWorkspaceTab(m.workspaceId, m.tab);
       break;
@@ -27,12 +31,12 @@ browser.runtime.onMessage.addListener(async m => {
       response = await BackgroundLogic.updateWorkspaceTabUrl(m.workspaceId, m.tab, m.url);
       break;
 
-    case "createNewWorkspaceAndSwitch":
-      await BackgroundLogic.createNewWorkspaceAndSwitch();
+    case "createWorkspace":
+      response = (await BackgroundLogic.createNewWorkspace(false)).id;
       break;
 
-    case "cloneWorkspaceAndSwitch":
-      await BackgroundLogic.cloneWorkspaceAndSwitch();
+    case "duplicateWorkspace":
+      response = (await BackgroundLogic.duplicateWorkspace(m.workspaceId)).id;
       break;
 
     case "renameWorkspace":

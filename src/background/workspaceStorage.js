@@ -39,10 +39,12 @@ const WorkspaceStorage = {
     return await Promise.all(promises);
   },
 
-  async registerWorkspaceToWindow(windowId, workspaceId) {
+  // Adds the workspace after `afterWorkspaceId`, or at the end
+  async registerWorkspaceToWindow(windowId, workspaceId, afterWorkspaceId) {
     const key = WorkspaceStorage._getKeyForWindow(windowId);
     const workspacesForWindow = await WorkspaceStorage._localStorageGet(key) || [];
-    workspacesForWindow.push(workspaceId);
+    const index = workspacesForWindow.indexOf(afterWorkspaceId);
+    workspacesForWindow.splice(index == -1 ? workspacesForWindow.length : index + 1, 0, workspaceId);
     await WorkspaceStorage._localStorageSet(key, workspacesForWindow);
   },
 

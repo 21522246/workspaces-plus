@@ -11,7 +11,7 @@ class Workspace {
     }
   }
 
-  static async create(windowId, name, active, tabs = [], groups = []) {
+  static async create(windowId, name, active, tabs = [], groups = [], afterWorkspaceId) {
     const workspace = new Workspace(Util.generateUUID(), {
       name: name,
       active: active || false,
@@ -21,7 +21,7 @@ class Workspace {
     });
 
     await workspace._storeState();
-    await WorkspaceStorage.registerWorkspaceToWindow(windowId, workspace.id);
+    await WorkspaceStorage.registerWorkspaceToWindow(windowId, workspace.id, afterWorkspaceId);
 
     return workspace;
   }
@@ -56,9 +56,11 @@ class Workspace {
   // or the tabs of the active workspace that couldn't be opened. `index` is their position in hiddenTabs.
   async listTabs() {
     const openTabs = this.active ? await this.getTabs() : [];
+    // The tab that show() will focus: the last one marked active (an inactive workspace's own tabs only)
+    const activeIndex = this.active ? -1 : this.hiddenTabs.findLastIndex((tab) => tab.active);
     return [
       ...openTabs.map((tab, index) => ({ index, id: tab.id, url: tab.url, title: tab.title, active: tab.active, hidden: false })),
-      ...this.hiddenTabs.map((tab, index) => ({ index, id: tab.id, url: tab.url, title: tab.title, active: false, hidden: true })),
+      ...this.hiddenTabs.map((tab, index) => ({ index, id: tab.id, url: tab.url, title: tab.title, active: index == activeIndex, hidden: true })),
     ];
   }
 

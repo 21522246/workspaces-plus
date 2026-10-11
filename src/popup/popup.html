@@ -7,28 +7,52 @@
   </head>
   <body>
     <div class="container" id="workspace-list-container">
-      <div class="title">Workspaces</div>
+      <div class="title">
+        Workspaces
+        <a href="#" class="help-button js-toggle-help" title="Keyboard shortcuts (?)">?</a>
+      </div>
+      <div id="filter-bar" class="filter-bar hide">
+        <span class="filter-prompt">/</span>
+        <input type="text" id="filter-input" class="js-filter-input" placeholder="Filter tabs and workspaces" autocomplete="off" spellcheck="false">
+      </div>
       <ul id="workspace-list">
         <!-- Populated with js -->
       </ul>
+      <div id="help-panel" class="help-panel">
+        <h3>Move around</h3>
+        <dl>
+          <dt><kbd>j</kbd> <kbd>k</kbd> or <kbd>↓</kbd> <kbd>↑</kbd></dt><dd>Move the cursor down / up</dd>
+          <dt><kbd>l</kbd> or <kbd>→</kbd></dt><dd>Expand a workspace, then go to its first tab</dd>
+          <dt><kbd>h</kbd> or <kbd>←</kbd></dt><dd>Go from a tab to its workspace, then collapse it</dd>
+          <dt><kbd>Enter</kbd> or <kbd>Space</kbd></dt><dd>Switch to the workspace or tab</dd>
+          <dt><kbd>1</kbd> … <kbd>9</kbd> <kbd>0</kbd></dt><dd>Switch to workspace 1 … 10</dd>
+        </dl>
+
+        <h3>Workspaces and tabs</h3>
+        <dl>
+          <dt><kbd>n</kbd></dt><dd>New workspace, added at the end</dd>
+          <dt><kbd>d</kbd></dt><dd>Duplicate the workspace with its tabs</dd>
+          <dt><kbd>e</kbd></dt><dd>Rename the workspace, or edit the URL of the tab. <kbd>Enter</kbd> saves, click outside to cancel</dd>
+          <dt><kbd>r</kbd></dt><dd>Remove the tab. On a workspace, press it twice</dd>
+          <dt><kbd>J</kbd> <kbd>K</kbd> or <kbd>⇧↓</kbd> <kbd>⇧↑</kbd></dt><dd>Move the workspace down / up</dd>
+        </dl>
+
+        <h3>Filter</h3>
+        <dl>
+          <dt><kbd>/</kbd></dt><dd>Filter tabs and workspaces: every word must be in the title, URL or workspace name</dd>
+          <dt><kbd>↓</kbd> <kbd>↑</kbd></dt><dd>Move the cursor while typing (also <kbd>Ctrl</kbd>+<kbd>j</kbd> <kbd>k</kbd>)</dd>
+          <dt><kbd>Enter</kbd></dt><dd>Keep the results, to use the other shortcuts on them. On an empty filter, clear it</dd>
+          <dt><kbd>l</kbd> <kbd>h</kbd></dt><dd>Show more / fewer tabs of a workspace: the matching ones, then all</dd>
+        </dl>
+
+        <h3>Other</h3>
+        <dl>
+          <dt><kbd>?</kbd></dt><dd>Show / hide this help (<kbd>q</kbd> also hides it)</dd>
+          <dt><kbd>Esc</kbd></dt><dd>Close the popup</dd>
+          <dt>Mouse</dt><dd>Click <b>▸</b> to expand, <b>×</b> to remove a tab, drag a workspace to reorder it</dd>
+        </dl>
+      </div>
       <div id="tree-status" class="tree-status"></div>
-
-      <div class="footer-container">
-        <a href="#" class="footer split-large js-switch-panel">Edit workspaces</a><!--
-        --><a href="#" class="footer split-small new-btn js-new-workspace"></a><!--          
-        --><a href="#" class="footer split-small clone-btn js-clone-workspace"></a>
-      </div>
-    </div>
-
-    <div class="container hide" id="workspace-edit-container">
-      <div class="title">Workspaces</div>
-      <ul id="workspace-edit">
-        <!-- Populated with js -->
-      </ul>
-
-      <div class="footer-container">
-        <a href="#" class="footer full-width js-switch-panel">Stop editing</a>
-      </div>
     </div>
 
     <!-- Browser actions don't receive focus by default, so set focus to this hidden element to be able to capture keyup events -->

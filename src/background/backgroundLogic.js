@@ -40,6 +40,9 @@ const BackgroundLogic = {
   async changeWorkspaceOrder(orderedWorkspaceIds) {
     const windowId = await BackgroundLogic.getCurrentWindowId();
     await WorkspaceStorage.changeWorkspaceOrder(windowId, orderedWorkspaceIds);
+
+    // Re-render context menu, it lists the workspaces in order
+    BackgroundLogic.updateContextMenu();
   },
 
   /**
@@ -72,36 +75,26 @@ const BackgroundLogic = {
     return workspace;
   },
 
-  async cloneWorkspace(active) {
+  // Copy a workspace, and add the copy right after it
+  async duplicateWorkspace(workspaceId) {
     const windowId = await BackgroundLogic.getCurrentWindowId();
-    const currentWorkspace =
-      await BackgroundLogic.getCurrentWorkspaceForWindow(windowId);
-    const nextNumber =
-      (await WorkspaceStorage.fetchWorkspacesCountForWindow(windowId)) + 1;
+    const source = await Workspace.find(workspaceId);
 
+    // An active workspace has open tabs, and may also keep tabs that couldn't be opened
+    const openTabs = source.active ? await source.getTabs() : [];
     const workspace = await Workspace.create(
       windowId,
-      `Workspace ${nextNumber}`,
-      active || false,
-      await currentWorkspace.getTabs(),
-      await currentWorkspace.getGroups(),
+      `${source.name} (copy)`,
+      false,
+      [...openTabs.map(Workspace.tabData), ...source.hiddenTabs],
+      await source.getGroups(),
+      workspaceId,
     );
 
     // Re-render context menu
     BackgroundLogic.updateContextMenu();
-    await BackgroundLogic.updateBadgeText();
 
     return workspace;
-  },
-
-  async createNewWorkspaceAndSwitch(active) {
-    const workspace = await BackgroundLogic.createNewWorkspace(active);
-    await BackgroundLogic.switchToWorkspace(workspace.id);
-  },
-
-  async cloneWorkspaceAndSwitch(active) {
-    const workspace = await BackgroundLogic.cloneWorkspace(active);
-    await BackgroundLogic.switchToWorkspace(workspace.id);
   },
 
   async switchToWorkspace(workspaceId) {
@@ -145,6 +138,15 @@ const BackgroundLogic = {
   async getWorkspaceTabs(workspaceId) {
     const workspace = await Workspace.find(workspaceId);
     return await workspace.listTabs();
+  },
+
+  // { workspaceId: tabs } for all the workspaces, in a single call
+  async getTabsOfAllWorkspaces() {
+    const workspaces = await BackgroundLogic.getWorkspacesForCurrentWindow();
+    const entries = await Promise.all(
+      workspaces.map(async (workspace) => [workspace.id, await workspace.listTabs()]),
+    );
+    return Object.fromEntries(entries);
   },
 
   async removeWorkspaceTab(workspaceId, tabRef) {
