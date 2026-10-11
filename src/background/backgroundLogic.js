@@ -113,17 +113,22 @@ const BackgroundLogic = {
 
     if (oldWorkspace.id == newWorkspace.id) {
       // Nothing to do here
-      return;
+      return true;
     }
 
     // Since we're gonna be closing all open tabs, we need to show the new ones first.
     // However, we first need to prepare the old one, so it can tell which tabs were the original ones and which were opened by the new workspace.
     await oldWorkspace.prepareToHide();
-    await newWorkspace.show();
+    if (!(await newWorkspace.show())) {
+      // Nothing could be opened, so keep the current tabs instead of leaving an empty window
+      Util.notify(`Couldn't open the tabs of "${newWorkspace.name}", the switch was cancelled`);
+      return false;
+    }
     await oldWorkspace.hide();
 
     BackgroundLogic.updateContextMenu();
     await BackgroundLogic.updateBadgeText();
+    return true;
   },
 
   async renameWorkspace(workspaceId, workspaceName) {
@@ -147,7 +152,9 @@ const BackgroundLogic = {
         windowId,
         workspaceId,
       );
-      await BackgroundLogic.switchToWorkspace(nextWorkspaceId);
+      if (!(await BackgroundLogic.switchToWorkspace(nextWorkspaceId))) {
+        throw new Error(`Couldn't switch away from "${workspaceToDelete.name}", so it wasn't deleted`);
+      }
     }
 
     await workspaceToDelete.delete();
@@ -172,7 +179,10 @@ const BackgroundLogic = {
     });
 
     if (tabsInCurrentWindow.length == 1) {
-      await BackgroundLogic.switchToWorkspace(destinationWorkspace.id);
+      if (!(await BackgroundLogic.switchToWorkspace(destinationWorkspace.id))) {
+        // Closing the tab would close the window, so leave it in both workspaces
+        return;
+      }
     }
 
     // Finally, detach tab from source workspace

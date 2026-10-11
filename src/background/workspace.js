@@ -68,7 +68,8 @@ class Workspace {
 
   async toObject() {
     const obj = Object.assign({}, this);
-    obj.tabCount = (await this.getTabs()).length;
+    // The active workspace may also keep tabs that couldn't be opened
+    obj.tabCount = (await this.getTabs()).length + (this.active ? this.hiddenTabs.length : 0);
 
     return obj;
   }
@@ -83,17 +84,11 @@ class Workspace {
     // Fetch group information from tabs
     this.groups = await Workspace.fetchGroupsFromTabs(tabs);
 
-    tabs.forEach((tab) => {
-      const tabData = {
-        id: tab.id,
-        url: tab.url,
-        title: tab.title,
-        active: tab.active,
-        cookieStoreId: tab.cookieStoreId,
-        groupId: tab.groupId,
-      };
-      this.hiddenTabs.push(tabData);
-    });
+    // Only these tabs get closed by hide(). Hidden tabs kept from an earlier show() have ids from an old session,
+    // which may now belong to unrelated tabs.
+    this.tabIdsToClose = tabs.map((tab) => tab.id);
+
+    this.hiddenTabs = [...tabs.map(Workspace.tabData), ...this.hiddenTabs];
   }
 
   // Then remove the tabs from the window
@@ -101,10 +96,10 @@ class Workspace {
     this.active = false;
     await this._storeState();
 
-    const tabIds = this.hiddenTabs.map((tab) => tab.id);
-    await browser.tabs.remove(tabIds);
+    await browser.tabs.remove(this.tabIdsToClose);
   }
 
+  // Returns false if none of the tabs could be opened, in which case nothing is changed
   async show() {
     const tabs = this.hiddenTabs.filter((tab) =>
       Util.isPermissibleURL(tab.url),
@@ -118,20 +113,25 @@ class Workspace {
     }
 
     // Create tabs and restore groups
-    const createdTabs = await this._createTabs(tabs);
+    const { createdTabs, failedTabs } = await this._createTabs(tabs);
+    if (createdTabs.length == 0) {
+      return false;
+    }
     await this._restoreGroups(createdTabs);
 
-    // Clean up and mark as active
-    this.hiddenTabs = [];
+    // Clean up and mark as active. Tabs that couldn't be opened are kept, so they aren't lost.
+    this.hiddenTabs = failedTabs;
     this.groups = [];
     this.active = true;
     await this._storeState();
+    return true;
   }
 
   // Private helper method to create tabs from saved data
   async _createTabs(tabs) {
     const createdTabs = [];
-    
+    const failedTabs = [];
+
     for (const tab of tabs) {
       try {
         const createdTab = await browser.tabs.create({
@@ -150,18 +150,12 @@ class Workspace {
         });
       } catch (error) {
         console.error(`Failed to create tab: ${tab.url}`, error);
-        if (browser.notifications) {
-          browser.notifications.create({
-            type: "basic",
-            iconUrl: browser.runtime.getURL("icons/container-site-d-48.png"),
-            title: "Workspaces+",
-            message: `Failed to create tab: ${tab.url || "Unknown URL"}`,
-          });
-        }
+        failedTabs.push(tab);
+        Util.notify(`Failed to create tab: ${tab.url || "Unknown URL"}`);
       }
     }
-    
-    return createdTabs;
+
+    return { createdTabs, failedTabs };
   }
 
   // Private helper method to restore groups and assign tabs to them
@@ -212,7 +206,7 @@ class Workspace {
   }
 
   async attachTab(tab) {
-    this.hiddenTabs.push(tab);
+    this.hiddenTabs.push(Workspace.tabData(tab));
 
     await this._storeState();
   }
@@ -243,15 +237,12 @@ class Workspace {
     this.name = state.name;
     this.active = state.active;
     this.hiddenTabs = state.hiddenTabs;
-    this.windowId = state.windowId;
     this.groups = state.groups;
 
-    // For backwards compatibility
-    if (!this.windowId) {
-      console.log("Backwards compatibility for", this.name);
-      this.windowId = (await browser.windows.getCurrent()).id;
-      await this._storeState();
-    }
+    // Window ids change when the browser restarts (e.g. after an update), and all windows share the same workspaces,
+    // so always use the current window instead of the one the workspace was saved in. Otherwise tabs are read from
+    // and opened in a window that no longer exists, and the workspace is saved as empty.
+    this.windowId = (await browser.windows.getCurrent()).id;
   }
 
   // Private method to store state to storage
@@ -263,6 +254,18 @@ class Workspace {
       windowId: this.windowId,
       groups: this.groups,
     });
+  }
+
+  // The data kept for each hidden tab
+  static tabData(tab) {
+    return {
+      id: tab.id,
+      url: tab.url,
+      title: tab.title,
+      active: tab.active,
+      cookieStoreId: tab.cookieStoreId,
+      groupId: tab.groupId,
+    };
   }
 
   // Static helper method to fetch group information from tabs

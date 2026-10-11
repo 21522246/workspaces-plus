@@ -33,7 +33,8 @@ const WorkspaceStorage = {
     const workspaceIds = await WorkspaceStorage._localStorageGet(key) || [];
     const promises = workspaceIds.map(async (workspaceId) => {
       const state = await WorkspaceStorage.fetchWorkspaceState(workspaceId);
-      return new Workspace(workspaceId, state);
+      // The stored windowId may belong to a previous browser session, see Workspace._refreshState
+      return new Workspace(workspaceId, { ...state, windowId });
     });
     return await Promise.all(promises);
   },

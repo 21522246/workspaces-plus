@@ -33,6 +33,17 @@ const Util = {
       );
   },
 
+  notify(message) {
+    if (browser.notifications) {
+      browser.notifications.create({
+        type: "basic",
+        iconUrl: browser.runtime.getURL("icons/container-site-d-48.png"),
+        title: "Workspaces+",
+        message: message,
+      });
+    }
+  },
+
   flattenArray(arr) {
     return arr.reduce((acc, cur) => acc.concat(cur), []);
   },
