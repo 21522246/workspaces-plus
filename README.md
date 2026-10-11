@@ -30,6 +30,11 @@
  - Dark theme.
  - Consistent and non-closing UI.
  - Tab Groups support - Save and restore which tabs are grouped together when switching workspaces.
+ - Tree view of the tabs in each workspace. In the workspace list:
+   - `j`/`k` or `↓`/`↑` move up and down, `l`/`h` or `→`/`←` expand and collapse a workspace.
+   - `Enter` switches to the selected workspace, or to the selected tab.
+   - `e` renames the selected workspace, or edits the URL of the selected tab.
+   - `d` removes the selected tab, or deletes the selected workspace (press `d` twice to confirm).
 
 <a href="#TODO"><h2>TODO 🔗</h2></a>
 - [x] Workspace indicator based on workspace name.

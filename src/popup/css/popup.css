@@ -84,7 +84,13 @@ ul {
   padding: 0 0 15px;
 }
 
-li.workspace-list-entry {
+/* Expanded workspaces can make the tree taller than the popup */
+#workspace-list {
+  max-height: 440px;
+  overflow-y: auto;
+}
+
+.workspace-list-entry {
   background: rgb(59, 59, 59);
   box-shadow: 0 0 10px rgba(226, 226, 226, 0);
   margin: 15px 20px 0 10px;
@@ -99,24 +105,141 @@ li.workspace-list-entry {
   color: white;
 }
 
-li.workspace-list-entry .workspace-order {
+.workspace-list-entry .workspace-order {
   font-weight: bold;
   margin-right: 0.5em;
   color: rgba(255, 255, 255, 0.63);
 }
 
-li.workspace-list-entry.active::after {
+.workspace-list-entry.active .workspace-name::after {
   content: " – active";
   color: rgba(255, 255, 255, 0.63);
 }
 
-li.workspace-list-entry.selected {
+.workspace-list-entry.selected {
   border: 2px solid #0093e9;
 }
 
-li.workspace-list-entry:hover {
+.workspace-list-entry:hover {
   background: rgb(87, 87, 87);
   box-shadow: 0 0 10px rgba(226, 226, 226, 0.2);
+}
+
+/* Tree view */
+.tree-toggle {
+  display: inline-block;
+  width: 1.2em;
+  margin-left: -4px;
+  color: rgba(255, 255, 255, 0.63);
+  text-align: center;
+}
+
+.tree-toggle:hover {
+  color: white;
+}
+
+.workspace-list-entry.confirm-delete,
+.tab-list-entry.confirm-delete {
+  border: 2px solid #ff6a88;
+}
+
+ul.tab-list {
+  min-height: 0;
+  padding: 4px 0 0;
+  margin: 0 20px 0 26px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+li.tab-list-entry,
+li.tab-list-empty {
+  display: flex;
+  align-items: center;
+  margin: 2px 0 0 6px;
+  padding: 4px 6px;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8em;
+}
+
+li.tab-list-entry {
+  cursor: pointer;
+}
+
+li.tab-list-empty {
+  color: rgba(255, 255, 255, 0.45);
+  font-style: italic;
+}
+
+li.tab-list-entry:hover {
+  background: rgb(59, 59, 59);
+}
+
+li.tab-list-entry.selected {
+  border-color: #0093e9;
+}
+
+li.tab-list-entry.current .tab-title {
+  font-weight: 500;
+  color: white;
+}
+
+li.tab-list-entry.not-open .tab-title {
+  color: #ff9a8b;
+  font-style: italic;
+}
+
+.tab-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.tab-remove {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  background: url("../img/delete.svg") no-repeat center / 10px;
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+li.tab-list-entry:hover a.tab-remove,
+li.tab-list-entry.selected a.tab-remove {
+  opacity: 0.8;
+}
+
+a.tab-remove:hover {
+  opacity: 1 !important;
+}
+
+.tree-edit-input {
+  flex: 1;
+  min-width: 0;
+  width: calc(100% - 4em);
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 3px;
+  background: rgb(85, 85, 85);
+  color: white;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.tree-status {
+  padding: 4px 10px;
+  background: #1d1d1d;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75em;
+  text-align: center;
+}
+
+.tree-status.error {
+  color: #ff9a8b;
 }
 
 li.workspace-edit-entry {
@@ -179,7 +302,7 @@ li:only-child.workspace-edit-entry a.edit-button-delete {
   opacity: 0.5;
 }
 
-li.workspace-list-entry .tabs-qty,
+.workspace-list-entry .tabs-qty,
 li.workspace-edit-entry .tabs-qty {
   position: absolute;
   display: inline-block;
@@ -263,6 +386,6 @@ li.workspace-edit-entry .tabs-qty {
   border: 0;
 }
 
-.workspace-list-entry.dragging {
+.workspace-node.dragging {
   opacity: 0;
 }

@@ -131,6 +131,37 @@ const BackgroundLogic = {
     return true;
   },
 
+  async switchToWorkspaceTab(workspaceId, tabRef) {
+    const workspace = await Workspace.find(workspaceId);
+
+    if (workspace.active) {
+      await workspace.focusTab(tabRef);
+    } else {
+      await workspace.selectHiddenTab(tabRef);
+      await BackgroundLogic.switchToWorkspace(workspaceId);
+    }
+  },
+
+  async getWorkspaceTabs(workspaceId) {
+    const workspace = await Workspace.find(workspaceId);
+    return await workspace.listTabs();
+  },
+
+  async removeWorkspaceTab(workspaceId, tabRef) {
+    const workspace = await Workspace.find(workspaceId);
+    await workspace.removeTab(tabRef);
+
+    // Re-render context menu
+    BackgroundLogic.updateContextMenu();
+  },
+
+  async updateWorkspaceTabUrl(workspaceId, tabRef, url) {
+    const workspace = await Workspace.find(workspaceId);
+    const normalizedUrl = Util.normalizeURL(url);
+    await workspace.updateTabUrl(tabRef, normalizedUrl);
+    return normalizedUrl;
+  },
+
   async renameWorkspace(workspaceId, workspaceName) {
     const workspace = await Workspace.find(workspaceId);
 

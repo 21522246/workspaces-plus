@@ -52,6 +52,69 @@ class Workspace {
     }
   }
 
+  // Tabs as shown in the popup tree. `hidden` tabs are stored ones: all the tabs of an inactive workspace,
+  // or the tabs of the active workspace that couldn't be opened. `index` is their position in hiddenTabs.
+  async listTabs() {
+    const openTabs = this.active ? await this.getTabs() : [];
+    return [
+      ...openTabs.map((tab, index) => ({ index, id: tab.id, url: tab.url, title: tab.title, active: tab.active, hidden: false })),
+      ...this.hiddenTabs.map((tab, index) => ({ index, id: tab.id, url: tab.url, title: tab.title, active: false, hidden: true })),
+    ];
+  }
+
+  // Close or forget one of the tabs returned by listTabs()
+  async removeTab(tabRef) {
+    if (tabRef.hidden) {
+      this.hiddenTabs.splice(this._findHiddenTabIndex(tabRef), 1);
+      await this._storeState();
+      return;
+    }
+
+    const tabs = await this._findOpenTabs(tabRef);
+    if (tabs.length == 1) {
+      // Closing the last tab would close the window, so open a blank one first
+      await browser.tabs.create({ windowId: this.windowId });
+    }
+    await browser.tabs.remove(tabRef.id);
+  }
+
+  async updateTabUrl(tabRef, url) {
+    if (tabRef.hidden) {
+      const tab = this.hiddenTabs[this._findHiddenTabIndex(tabRef)];
+      tab.url = url;
+      // The old title belongs to the old page
+      tab.title = url;
+      await this._storeState();
+    } else {
+      await this._findOpenTabs(tabRef);
+      await browser.tabs.update(tabRef.id, { url: url });
+    }
+  }
+
+  // Focus one of the tabs of this (active) workspace. A stored tab that couldn't be opened before is opened again.
+  async focusTab(tabRef) {
+    if (!tabRef.hidden) {
+      await this._findOpenTabs(tabRef);
+      await browser.tabs.update(tabRef.id, { active: true });
+      return;
+    }
+
+    const index = this._findHiddenTabIndex(tabRef);
+    const { createdTabs } = await this._createTabs([{ ...this.hiddenTabs[index], active: true }]);
+    if (createdTabs.length == 0) {
+      throw new Error(`Failed to open tab: ${tabRef.url}`);
+    }
+    this.hiddenTabs.splice(index, 1);
+    await this._storeState();
+  }
+
+  // Make show() focus this tab when switching to this workspace
+  async selectHiddenTab(tabRef) {
+    const selected = this.hiddenTabs[this._findHiddenTabIndex(tabRef)];
+    this.hiddenTabs.forEach((tab) => (tab.active = tab == selected));
+    await this._storeState();
+  }
+
   async getGroups() {
     if (this.active) {
       // Fetch current groups from browser
@@ -243,6 +306,25 @@ class Workspace {
     // so always use the current window instead of the one the workspace was saved in. Otherwise tabs are read from
     // and opened in a window that no longer exists, and the workspace is saved as empty.
     this.windowId = (await browser.windows.getCurrent()).id;
+  }
+
+  // Hidden tabs come from older sessions, so their ids can't be trusted. Find them by position instead,
+  // and check the url to make sure the caller's tab list isn't out of date.
+  _findHiddenTabIndex({ index, url }) {
+    const tab = this.hiddenTabs[index];
+    if (!tab || tab.url != url) {
+      throw new Error("The tab list is out of date, please try again");
+    }
+    return index;
+  }
+
+  // Returns the open tabs of this workspace, after checking that `tabRef` is one of them
+  async _findOpenTabs(tabRef) {
+    const tabs = this.active ? await this.getTabs() : [];
+    if (!tabs.some((tab) => tab.id == tabRef.id)) {
+      throw new Error("The tab list is out of date, please try again");
+    }
+    return tabs;
   }
 
   // Private method to store state to storage

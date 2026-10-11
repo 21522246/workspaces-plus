@@ -11,6 +11,22 @@ browser.runtime.onMessage.addListener(async m => {
       await BackgroundLogic.switchToWorkspace(m.workspaceId);
       break;
 
+    case "switchToWorkspaceTab":
+      await BackgroundLogic.switchToWorkspaceTab(m.workspaceId, m.tab);
+      break;
+
+    case "getWorkspaceTabs":
+      response = await BackgroundLogic.getWorkspaceTabs(m.workspaceId);
+      break;
+
+    case "removeWorkspaceTab":
+      await BackgroundLogic.removeWorkspaceTab(m.workspaceId, m.tab);
+      break;
+
+    case "updateWorkspaceTabUrl":
+      response = await BackgroundLogic.updateWorkspaceTabUrl(m.workspaceId, m.tab, m.url);
+      break;
+
     case "createNewWorkspaceAndSwitch":
       await BackgroundLogic.createNewWorkspaceAndSwitch();
       break;
